@@ -5,7 +5,8 @@ import discord
 import nest_asyncio
 from discord.ext import commands
 from dotenv import load_dotenv
-from minecraft import Minecraft
+
+from jorkal.minecraft import Minecraft
 
 load_dotenv()
 
@@ -19,8 +20,8 @@ bot = commands.Bot(command_prefix="$", intents=intents)
 
 async def wrapped_bot_start():
 
-    await bot.load_extension("spoogles")
-    discord_token = os.getenv("DISCORD_TOKEN")
+    await bot.load_extension("jorkal.spoogles")
+    discord_token = os.environ.get("DISCORD_TOKEN")
     await bot.run(discord_token)
 
 
@@ -30,8 +31,8 @@ async def background():
         if server_online is False:
             await asyncio.sleep(60)
             continue
-        minecraft_host = os.getenv("MINECRAFT_HOST")
-        rcon_password = os.getenv("MINECRAFT_RCON_PASSWORD")
+        minecraft_host = os.environ.get("MINECRAFT_HOST")
+        rcon_password = os.environ.get("MINECRAFT_RCON_PASSWORD")
         minecraft = Minecraft(minecraft_host, rcon_password)
         player_count_before = minecraft.get_player_count()
         await asyncio.sleep(1200)

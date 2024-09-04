@@ -3,7 +3,8 @@ import os
 
 from discord.ext import commands
 from dotenv import load_dotenv
-from minecraft import Minecraft
+
+from jorkal.minecraft import Minecraft
 
 load_dotenv()
 
@@ -14,10 +15,10 @@ class Spoogles(commands.Cog):
     # The __init__ method is a special method that is called when an object is created. In this case, it is called when the Spoogles cog is created.
     def __init__(self, bot):
 
-        self.host = os.genenv(
+        self.host = os.environ.get(
             "MINECRAFT_HOST"
         )  # This is the IP address of the Minecraft server.
-        self.rcon_password = os.getenv(
+        self.rcon_password = os.environ.get(
             "MINECRAFT_RCON_PASSWORD"
         )  # This is the RCON password of the Minecraft server.
         self.minecraft = Minecraft(

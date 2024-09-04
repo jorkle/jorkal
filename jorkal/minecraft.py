@@ -12,8 +12,8 @@ class Minecraft:
         self.host = host
         self.rcon_password = rcon_password
         self.rcon_session = False
-        self.stop_url = os.getenv("STOP_URL")
-        self.start_url = os.getenv("START_URL")
+        self.stop_url = os.environ.get("STOP_URL")
+        self.start_url = os.environ.get("START_URL")
 
     def _connect(self):
         try:
