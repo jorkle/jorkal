@@ -1,0 +1,4 @@
+.env
+jorkal/.env
+poetry.lock
+jorkal/__pycache__/

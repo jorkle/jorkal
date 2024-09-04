@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "jorkal"
+version = "0.1.0"
+description = ""
+authors = ["Jorkle <kyle@jorkle.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+discord-py = "^2.4.0"
+mctools = "^1.3.0"
+task-virtualthread = "^0.0.3"
+requests = "^2.32.3"
+nest-asyncio = "^1.6.0"
+python-dotenv = "^1.0.1"
+
+[tool.poetry.scripts]
+jorkal = "jorkal.bot:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
