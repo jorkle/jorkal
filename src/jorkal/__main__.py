@@ -1,7 +1,7 @@
 from jorkal import main
 
 
-def execute_jorkal():
+def __execute_jorkal():
     """Executes the initial entry point of Jorkal.
 
     This functionality exists to ensure that Jorkal still executes in certain scenarios (see below).
@@ -12,4 +12,4 @@ def execute_jorkal():
 
 
 if __name__ == "__main__":
-    execute_jorkal()
+    __execute_jorkal()

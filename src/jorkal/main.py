@@ -69,12 +69,7 @@ async def __run_destinations():
     await modules.run_destinations()
 
 
-async def __run_discord_bot(configuration, logger, database):
-    discord = Discord(configuration, logger, database)
-    await discord.run()
-
-
-async def __gather_tasks(configuration, logger, database):
+async def __run_tasks():
     await asyncio.gather(__run_sources(), __run_destinations())
 
 
@@ -92,7 +87,7 @@ def __init_app(cmd_opts) -> None:
     database = Database(configuration, logger)
     global modules
     modules = Modules(configuration, logger, database)
-    asyncio.run(__gather_tasks(configuration, logger, database))
+    asyncio.run(__run_tasks())
 
 
 def run():

@@ -8,7 +8,7 @@ class Log:
         if "logs/" in log_file and not os.path.isdir("logs"):
             os.mkdir("logs")
         self.log_level = log_level
-        level = self.get_log_level(log_level)
+        level = self.__get_log_level(log_level)
         logging.basicConfig(
             filename=log_file,
             level=level,
@@ -65,7 +65,7 @@ class Log:
             print(f"CRITICAL: {message}")
             sys.exit(1)
 
-    def get_log_level(self, log_level: int):
+    def __get_log_level(self, log_level: int):
         match log_level:
             case 0:
                 return logging.DEBUG

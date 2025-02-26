@@ -1,1 +1,1 @@
-from jorkal.modules.sources import *
+from jorkal.modules.destinations import *

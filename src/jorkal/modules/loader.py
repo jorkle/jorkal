@@ -2,7 +2,6 @@ from pathlib import Path
 import sys
 import importlib
 import asyncio
-import nest_asyncio
 
 
 class Modules:

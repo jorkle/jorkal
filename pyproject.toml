@@ -23,9 +23,10 @@ dependencies = [
 [tool.poetry]
 packages = [
 {include = "jorkal", from = "src"},
-{include = "sources/*.py", from = "src/jorkal"},
-{include = "databases/*.py", from = "src/jorkal"},
-{include = "destinations/*.py", from = "src/jorkal"}
+{include = "modules", from = "src/jorkal"},
+{include = "types", from = "src/jorkal"},
+{include = "sources", from = "src/jorkal/modules"},
+{include = "destinations", from = "src/jorkal/modules"}
 ]
 
 [build-system]

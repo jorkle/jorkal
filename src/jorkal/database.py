@@ -21,7 +21,7 @@ class Database:
         except Exception as E:
             self.logger.critical(f"Failed to connect to Sqlite Database. ({E})")
 
-    async def already_added(self, company: str, link: str):
+    async def __already_added(self, company: str, link: str):
         try:
             connection = await self.__connect()
             already_added_query = """SELECT id, link FROM Jobs WHERE company = ?"""
@@ -40,7 +40,7 @@ class Database:
         except Exception as E:
             self.logger.critical(f"Unknown exception has occurred. ({E})")
 
-    async def sanitize_job_title(self, title):
+    async def __sanitize_job_title(self, title):
         sanitizations = [
             {"find": "Jr.?\s?", "replace": "Junior "},
             {"find": "Sr.?\s?", "replace": "Senior "},
@@ -54,7 +54,7 @@ class Database:
             )
         return title
 
-    async def sanitize_company_name(self, company):
+    async def __sanitize_company_name(self, company):
         sanitizations = [
             {"find": ",?\s?LLC", "replace": " LLC"},
             {"find": ",?\s?INC", "replace": " INC"},
@@ -114,9 +114,9 @@ class Database:
         source: str,
     ):
         try:
-            company = await self.sanitize_company_name(company)
-            title = await self.sanitize_job_title(title)
-            if await self.already_added(company, link):
+            company = await self.__sanitize_company_name(company)
+            title = await self.__sanitize_job_title(title)
+            if await self.__already_added(company, link):
                 self.logger.debug(
                     f"Skipping.. Job already added to the database ({title} @ {company} - {link})"
                 )
