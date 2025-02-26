@@ -168,7 +168,6 @@ discord_token: <enter your discord token here>"""
                 "type": "dict",
                 "schema": {
                     "linkedin": {"required": True, "type": "boolean"},
-                    "indeed": {"required": True, "type": "boolean"},
                 },
             },
             "destinations": {
