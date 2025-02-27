@@ -2,12 +2,13 @@ from datetime import datetime
 
 
 class Job:
-    def __init__(self, title, company, location, url):
+    def __init__(self, title, company, location, link, source):
         self.title = title
         self.company = company
         self.location = location
-        self.link = url
+        self.link = link
         self.date_scraped = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.source = source
 
 
 class Jobs:

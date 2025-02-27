@@ -21,13 +21,8 @@ class Linkedin(Source):
         self.__is_healthy = True
 
     async def __is_wanted_job(self, title):
-        regular_expressions = "(?:% s)" % "|".join(
-            self.configuration.job_title_expressions
-        )
-        if re.match(regular_expressions, title, re.IGNORECASE):
-            return True
-        else:
-            return False
+        regular_expressions = "|".join(self.configuration.job_title_expressions)
+        return bool(re.match(regular_expressions, title, re.IGNORECASE))
 
     async def __gather_jobs(self, query):
         try:
@@ -207,5 +202,5 @@ class Linkedin(Source):
                     )
                 self.jobs.postings.clear()
                 await asyncio.sleep(10)
-            await asyncio.sleep(self.configuration.check_interval)
+            await asyncio.sleep(self.configuration.interval)
         return

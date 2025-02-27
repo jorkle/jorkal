@@ -21,15 +21,15 @@ class JorkalBot(discord.Client):
 
     @tasks.loop(seconds=60)  # task runs every 60 seconds
     async def new_jobs(self):
-        jobs = await self.database.get_new_jobs()
-        if jobs is not None:
-            for job in jobs:
+        jobs = await self.database.get_jobs("discord")
+        if len(jobs.postings) > 0:
+            for job in jobs.postings:
                 await self.post_job(
-                    job["title"],
-                    job["company"],
-                    job["location"],
-                    job["link"],
-                    job["source"],
+                    job.title,
+                    job.company,
+                    job.location,
+                    job.link,
+                    job.source,
                 )
 
     async def post_job(self, title, company, location, link, source):

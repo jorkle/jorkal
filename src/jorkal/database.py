@@ -1,7 +1,11 @@
 import sqlite3
 import re
 from datetime import datetime
+
 import aiosqlite
+
+from jorkal.types.jobs import Jobs, Job
+from jorkal.helpers import normalize
 
 
 class Database:
@@ -21,7 +25,7 @@ class Database:
         except Exception as E:
             self.logger.critical(f"Failed to connect to Sqlite Database. ({E})")
 
-    async def __already_added(self, company: str, link: str):
+    async def __job_exists(self, company: str, link: str):
         try:
             connection = await self.__connect()
             already_added_query = """SELECT id, link FROM Jobs WHERE company = ?"""
@@ -40,63 +44,41 @@ class Database:
         except Exception as E:
             self.logger.critical(f"Unknown exception has occurred. ({E})")
 
-    async def __sanitize_job_title(self, title):
-        sanitizations = [
-            {"find": "Jr.?\s?", "replace": "Junior "},
-            {"find": "Sr.?\s?", "replace": "Senior "},
-        ]
-        for sanitization in sanitizations:
-            title = re.sub(
-                sanitization["find"],
-                sanitization["replace"],
-                title,
-                flags=re.IGNORECASE,
-            )
-        return title
-
-    async def __sanitize_company_name(self, company):
-        sanitizations = [
-            {"find": ",?\s?LLC", "replace": " LLC"},
-            {"find": ",?\s?INC", "replace": " INC"},
-            {"find": ",?\s?Incorporated", "replace": " INC"},
-        ]
-        for sanitization in sanitizations:
-            company_name = re.sub(
-                sanitization["find"], sanitization["replace"], company, re.IGNORECASE
-            )
-        return company_name  # pyright: ignore
-
-    async def get_new_jobs(self):
+    async def get_jobs(self, destination: str, only_unseen=True, source=None) -> Jobs:
         try:
-            new_jobs_query = """SELECT id, title, company, location, link, date_scraped, source FROM Jobs WHERE notified = FALSE;"""
-            update_status_query = f"""UPDATE Jobs SET notified = TRUE Where id in ("""
+
+            if source is None:
+                new_jobs_query = f"""SELECT id, title, company, location, link, date_scraped, source FROM Jobs WHERE ? = FALSE;"""
+                new_jobs_param = (destination,)
+                update_status_query = f"""UPDATE Jobs SET ? = TRUE WHERE id in ("""
+                update_status_param = (destination,)
+            else:
+                new_jobs_query = f"""SELECT id, title, company, location, link, date_scraped, source FROM Jobs WHERE ? = FALSE AND source = ?;"""
+                new_jobs_param = (destination, source)
+                update_status_query = (
+                    f"""UPDATE Jobs SET ? = TRUE WHERE source = ? AND id in ("""
+                )
+                update_status_param = (destination, source)
+
             connection = await self.__connect()
             cursor = await connection.cursor()  # pyright: ignore
-            await cursor.execute(new_jobs_query)
+            await cursor.execute(new_jobs_query, new_jobs_param)
             await connection.commit()  # pyright: ignore
-            jobs = await cursor.fetchall()
+            results = await cursor.fetchall()
             await cursor.close()
             await connection.close()  # pyright: ignore
-            new_jobs = []
-            if jobs is None or len(jobs) < 1:
-                return None
+            jobs = Jobs()
+            if results is None or len(results) < 1:
+                return Jobs()
             else:
-                for job in jobs:
+                for job in results:
                     update_status_query += f"{job[0]},"
-                    new_job = {}
-                    new_job["id"] = job[0]
-                    new_job["title"] = job[1]
-                    new_job["company"] = job[2]
-                    new_job["location"] = job[3]
-                    new_job["link"] = job[4]
-                    new_job["date_scraped"] = job[5]
-                    new_job["source"] = job[6]
-                    new_jobs.append(new_job)
+                    jobs.add_posting(Job(job[1], job[2], job[3], job[4]))
                 update_status_query = update_status_query[:-1] + ");"
                 self.logger.debug(f"sql query {update_status_query}")
                 connection = await self.__connect()
                 cursor = await connection.cursor()  # pyright: ignore
-                await cursor.execute(update_status_query)
+                await cursor.execute(update_status_query, update_status_param)
                 await connection.commit()  # pyright: ignore
                 await cursor.close()
                 await connection.close()  # pyright: ignore
@@ -114,9 +96,9 @@ class Database:
         source: str,
     ):
         try:
-            company = await self.__sanitize_company_name(company)
-            title = await self.__sanitize_job_title(title)
-            if await self.__already_added(company, link):
+            company = await Normalization.sanitize_company(company)
+            title = await Normalization.sanitize_title(title)
+            if await self.__job_exists(company, link):
                 self.logger.debug(
                     f"Skipping.. Job already added to the database ({title} @ {company} - {link})"
                 )
