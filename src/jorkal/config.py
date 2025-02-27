@@ -14,12 +14,19 @@ class Configuration:
 
         self.__load_configuration(configuration_file=cmd_opts["configuration_file"])
 
-    def __is_configuration_valid(self, yaml_data):
+    def __validate_configuration(self, yaml_data):
+        """
+        Validates the provided configuration (yaml) data"""
+
+        # cerberus yaml validation related
+        # validate the configuration against the schema returned by self.__get_schema()
         config_schema = self.__get_schema()
         v = Validator(config_schema)  # pyright: ignore
+
         return v.validate(yaml_data)  # pyright: ignore
 
     def __load_configuration(self, configuration_file):
+        """Attempts to load the configuration file. If the file does not exist, it will be created."""
         self.__log.debug(
             f"Attempting to load the configuration file ({configuration_file})."
         )
@@ -28,80 +35,81 @@ class Configuration:
 
                 configuration = yaml.safe_load(data_stream)
 
-                if self.__is_configuration_valid(configuration):
-                    self.__log.debug(
-                        f"Configuration file is valid ({configuration_file})."
-                    )
+                if self.__validate_configuration(configuration):
+                    self.__log.debug(f"[CONFIG] : '{configuration_file}' is valid")
 
                     self.sources = configuration["sources"]
-                    self.__log.debug(
-                        "Loaded source settings from the configuration file."
-                    )
+                    self.__log.debug("[CONFIG] : 'sources' configuration loaded")
 
                     self.destinations = configuration["destinations"]
-                    self.__log.debug(
-                        "Loaded destination (notification) settings from the configuration file."
-                    )
+                    self.__log.debug("[CONFIG] : 'destinations' configuration loaded")
 
-                    self.check_interval = configuration["check_interval"]
-                    self.__log.debug(
-                        "Loaded frequency setting from the configuration file."
-                    )
+                    self.interval = configuration["interval"]
+                    self.__log.debug("[CONFIG] : 'interval' configuration loaded")
 
                     self.database_file = configuration["database_file"]
-                    self.__log.debug(
-                        "Loaded database_file setting from the configuration file."
-                    )
+                    self.__log.debug("[CONFIG] : 'database_file' configuration loaded")
+
                     self.chrome_data_dir = configuration["chrome_data_dir"]
                     self.__log.debug(
-                        "Loaded chrome_data_dir setting from the configuration file."
+                        "[CONFIG] : 'chrome_data_dir' configuration loaded"
                     )
 
                     self.queries = configuration["queries"]
-                    self.__log.debug("Loaded queries setting from configuration file.")
+                    self.__log.debug("[CONFIG] : 'queries' configuration loaded")
 
                     self.job_title_expressions = configuration["job_title_expressions"]
                     self.__log.debug(
-                        "Loaded job title expressions from the configuration file."
+                        "[CONFIG] : 'job_title_expressions' configuration loaded"
                     )
 
                     self.discord_token = configuration["discord_token"]
-                    self.__log.debug(
-                        "Loaded discord token setting from the configuration file."
-                    )
+                    self.__log.debug("[CONFIG] : 'discord_token' configuration loaded")
 
                     self.discord_channel_id = configuration["discord_channel_id"]
                     self.__log.debug(
-                        "Loaded the discord channel id setting from the configuration file."
+                        "[CONFIG] : 'discord_channel_id' configuration loaded"
                     )
                 else:
-                    self.__log.critical("The configuration file is not valid.")
+                    self.__log.critical(
+                        f"[CONFIG] : '{configuration_file}' is not valid!"
+                    )
 
-            self.__log.info(f"{configuration_file} has been loaded successfully.")
+            self.__log.info(
+                f"[CONFIG] : Configuration '{configuration_file}' loaded successfully"
+            )
             return
 
-        except YAMLError as e:
-            self.__log.critical(f"Issue processing yaml configuration file. ({e})")
+        except YAMLError as E:
+            self.__log.critical(
+                f"[CONFIG] : Issue processing yaml configuration file.\nException Information: {E}"
+            )
         except FileNotFoundError:
             self.__log.error(
-                f"The specified configuration file '{configuration_file}' could not be found."
+                f"[CONFIG] : '{configuration_file}' was not found. Proceeding to generate a configuration file at the specified location."
             )
             self.__generate_configuration(configuration_file)
             self.__load_configuration(configuration_file)
         except PermissionError:
             self.__log.critical(
-                "You do not have permission to access the configuration file."
+                f"[CONFIG] : Failed to access '{configuration_file}' (check file permissions)"
             )
         except IsADirectoryError:
-            self.__log.critical("The specified path is a directory, not a file.")
-        except IOError as e:
-            self.__log.critical(f"An I/O error occurred. ({e})")
+            self.__log.critical(
+                f"[CONFIG] : '{configuration_file} is a directory, not a file."
+            )
+        except IOError as E:
+            self.__log.critical(
+                f"[CONFIG] : An I/O error occurred.\nException Information: {E}"
+            )
         except UnicodeDecodeError:
             self.__log.critical(
-                "Could not decode the file with the specified encoding."
+                f"[CONFIG] '{configuration_file}' has invalid encoding (unicode decode error)"
             )
-        except Exception as e:
-            self.__log.critical(f"An unexpected error occurred. ({e})")
+        except Exception as E:
+            self.__log.critical(
+                f"[CONFIG] Unknown exception has occured. Consider opening a github issue.\nException Information: {E}"
+            )
 
     def __save_configuration(
         self, configuration_file: str, configuration_data: str
@@ -110,32 +118,38 @@ class Configuration:
             with open(configuration_file, mode="w") as data_stream:
                 data_stream.write(configuration_data)
             self.__log.debug(f"Saved configuration to '{configuration_file}'.")
+
         except PermissionError:
             self.__log.critical(
-                "You do not have permission to access the configuration file."
+                f"[CONFIG] : Failed to access '{configuration_file}' (check file permissions)"
             )
         except IsADirectoryError:
-            self.__log.critical("The specified path is a directory, not a file.")
-        except IOError as e:
-            self.__log.critical(f"An I/O error occurred. ({e})")
+            self.__log.critical(
+                f"[CONFIG] : '{configuration_file} is a directory, not a file."
+            )
+        except IOError as E:
+            self.__log.critical(
+                f"[CONFIG] : An I/O error occurred.\nException Information: {E}"
+            )
         except UnicodeDecodeError:
             self.__log.critical(
-                "Could not decode the file with the specified encoding."
+                f"[CONFIG] '{configuration_file}' has invalid encoding (unicode decode error)"
             )
-        except Exception as e:
-            self.__log.critical(f"An unexpected error occurred. ({e})")
+        except Exception as E:
+            self.__log.critical(
+                f"[CONFIG] Unknown exception has occured. Consider opening a github issue.\nException Information: {E}"
+            )
 
     def __generate_configuration(self, configuration_file: str) -> None:
         self.__log.info(
-            f"Generating new configuration and saving it to '{configuration_file}'"
+            f"[CONFIG] : Generating new configuration file ({configuration_file})"
         )
         configuration_data = """---
 sources:
   linkedin: True
-  indeed: True
 destinations:
   discrd: True
-check_interval: 10
+interval: 10
 database_file: jorkal.db
 queries:
   - Penetration Tester
@@ -166,18 +180,16 @@ discord_token: <enter your discord token here>"""
             "sources": {
                 "required": True,
                 "type": "dict",
-                "schema": {
-                    "linkedin": {"required": True, "type": "boolean"},
-                },
+                "keysrules": {"type": "string"},
+                "valuesrules": {"type": "boolean"},
             },
             "destinations": {
                 "required": True,
                 "type": "dict",
-                "schema": {
-                    "discrd": {"required": True, "type": "boolean"},
-                },
+                "keysrules": {"type": "string"},
+                "valuesrules": {"type": "boolean"},
             },
-            "check_interval": {"required": True, "type": "integer"},
+            "interval": {"required": True, "type": "integer"},
             "database_file": {"required": True, "type": "string"},
             "queries": {
                 "required": True,
