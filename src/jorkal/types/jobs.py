@@ -16,7 +16,21 @@ class Jobs:
         self.postings = []
 
     def add_posting(self, job: Job) -> None:
+        """
+        Adds a job posting to the list of job postings.
+
+        Args:
+        -----
+            job (Job): The job posting to add
+        """
         self.postings.append(job)
 
     def get_postings(self) -> list:
+        """
+        Returns a list of job postings.
+
+        Returns:
+        --------
+            list: List of job postings
+        """
         return self.postings

@@ -18,7 +18,7 @@ class Modules:
         self.__load_destinations()
         self.__check_health()
 
-    def __load_source(self, source_name):
+    def __load_source(self, source_name: str) -> None:
 
         current_directory = Path(__file__).parent
         sys.path.insert(0, f"{str(current_directory)}/sources")
@@ -34,19 +34,20 @@ class Modules:
         self.logger.debug(f"Loaded source '{source_name}'.")
         return
 
-    def __load_sources(self):
-        for source_name in self.configuration.sources:
-            self.__load_source(source_name)
+    def __load_sources(self) -> None:
+        for source_name, source_enabled in self.configuration.sources.items():
+            if source_enabled is True:
+                self.__load_source(source_name)
         self.logger.info("Successfully loaded sources")
         return
 
-    async def run_sources(self):
+    async def run_sources(self) -> None:
         tasks = []
         for source in self.sources:
             tasks.append(asyncio.create_task(source.run()))
         await asyncio.gather(*tasks)
 
-    def __load_destination(self, destination_name):
+    def __load_destination(self, destination_name: str) -> None:
 
         current_directory = Path(__file__).parent
         sys.path.insert(0, f"{str(current_directory)}/destinations")
@@ -62,19 +63,23 @@ class Modules:
         self.logger.debug(f"Loaded destination '{destination_name}'.")
         return
 
-    def __load_destinations(self):
-        for destination_name in self.configuration.destinations:
-            self.__load_destination(destination_name)
+    def __load_destinations(self) -> None:
+        for (
+            destination_name,
+            destination_enabled,
+        ) in self.configuration.destinations.items():
+            if destination_enabled is True:
+                self.__load_destination(destination_name)
         self.logger.info("Successfully loaded destinations")
         return
 
-    async def run_destinations(self):
+    async def run_destinations(self) -> None:
         tasks = []
         for destination in self.destinations:
             tasks.append(asyncio.create_task(destination.run()))
         await asyncio.gather(*tasks)
 
-    def __check_health(self):
+    def __check_health(self) -> None:
         for source in self.sources:
             healthy = source.is_healthy()
             if healthy:

@@ -1,30 +1,38 @@
-from jorkal.types.source import Source
-from jorkal.types.jobs import Job
+import re
 import asyncio
 import urllib.parse
+
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
-import re
 
+from jorkal.log import Log
+from jorkal.config import Configuration
+from jorkal.database import Database
+from jorkal.types.source import Source
+from jorkal.types.jobs import Job
 
 LINKEDIN_AUTHENTICATION_URL = "https://www.linkedin.com/login"
 LINKEDIN_FEED_PAGE_URL = "https://www.linkedin.com/feed"
 
 
 class Linkedin(Source):
-    def __init__(self, logger, configuration, database):
+    """
+    Linkedin source module for Jorkal.
+    """
+
+    def __init__(self, logger: Log, configuration: Configuration, database: Database):
         super().__init__(logger, configuration, database)
-        self.name = "Linkedin"
+        self.name = "linkedin"
         self.browser = None
         self.database = database
         self.__is_healthy = True
 
-    async def __is_wanted_job(self, title):
+    async def __is_wanted_job(self, title: str) -> bool:
         regular_expressions = "|".join(self.configuration.job_title_expressions)
         return bool(re.match(regular_expressions, title, re.IGNORECASE))
 
-    async def __gather_jobs(self, query):
+    async def __gather_jobs(self, query: str) -> bool:
         try:
             query = urllib.parse.quote(query)
             self.browser.get(  # pyright: ignore
@@ -46,6 +54,8 @@ class Linkedin(Source):
                 By.XPATH,
                 '//li[contains(@class, "ember-view")]//div[contains(@class, "flex-grow-1")]',
             )
+            if len(postings) < 1:
+                return False
             print(f"number of postings: {len(postings)}")
             self.logger.debug(f"number of job postings: {len(postings)}")
             for posting in postings:
@@ -63,13 +73,15 @@ class Linkedin(Source):
                 if link is None:
                     continue
                 link = link.split("?")[0]
-                self.jobs.add_posting(Job(title, company, "Remote, US", link))
+                self.jobs.add_posting(
+                    Job(title, company, "Remote, US", link, self.name)
+                )
             return True
         except Exception as E:
             self.logger.error(f"Error gathering jobs for query '{query}' ({E})")
             return False
 
-    async def __start_browser(self, retry_count=0):
+    async def __start_browser(self, retry_count=0) -> bool:
         try:
             if self.browser is None:
                 options = webdriver.ChromeOptions()
@@ -94,10 +106,11 @@ class Linkedin(Source):
             self.browser = None
             return False
 
-    async def __authenticate(self, retry_count=0):
+    async def __authenticate(self, retry_count=0) -> bool:
         user_is_authenticating = True
         if self.browser is None:
             await self.__start_browser()
+            return True
         else:
             try:
                 self.browser.get(LINKEDIN_AUTHENTICATION_URL)
@@ -131,10 +144,10 @@ class Linkedin(Source):
                 self.__is_healthy = False
                 return False
 
-    def is_healthy(self):
+    def is_healthy(self) -> bool:
         return self.__is_healthy
 
-    async def __is_authenticated(self, retry_count=0):
+    async def __is_authenticated(self, retry_count=0) -> bool:
         await self.__start_browser()
         try:
             self.browser.get(LINKEDIN_FEED_PAGE_URL)  # pyright: ignore
@@ -147,7 +160,7 @@ class Linkedin(Source):
             if len(matches) < 1:
                 while retry_count < 3:
                     self.logger.debug("User is not authenticated")
-                    self.logger.info(f"Initiating user authentication (Please sign in)")
+                    self.logger.info("Initiating user authentication (Please sign in)")
                     await self.__authenticate()
                     self.logger.info(
                         f"Retrying user authentication check (attempt #{retry_count+1})"
@@ -182,7 +195,7 @@ class Linkedin(Source):
                 await self.__is_authenticated(retry_count + 1)
                 return True
 
-    async def run(self):
+    async def run(self) -> None:
         while self.__is_healthy:
             if not await self.__is_authenticated():
                 await self.__authenticate()
@@ -191,6 +204,8 @@ class Linkedin(Source):
                     f"[Module: Linkedin] Gathering results for query: '{query}'"
                 )
                 await self.__gather_jobs(query)
+                if len(self.jobs.postings) < 1:
+                    continue
                 for job in self.jobs.postings:
                     await self.database.add_job(
                         job.title,

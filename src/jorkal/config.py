@@ -180,16 +180,14 @@ discord_token: <enter your discord token here>"""
             "sources": {
                 "required": True,
                 "type": "dict",
-                "schema": {
-                    "linkedin": {"required": True, "type": "boolean"},
-                },
+                "keysrules": {"type": "string"},
+                "valuesrules": {"type": "boolean"},
             },
             "destinations": {
                 "required": True,
                 "type": "dict",
-                "schema": {
-                    "discrd": {"required": True, "type": "boolean"},
-                },
+                "keysrules": {"type": "string"},
+                "valuesrules": {"type": "boolean"},
             },
             "interval": {"required": True, "type": "integer"},
             "database_file": {"required": True, "type": "string"},
